@@ -1,0 +1,232 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 10.11
+-- Dumped by pg_dump version 10.11
+
+-- Started on 2020-01-10 10:33:22 CET
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 3069 (class 0 OID 16545)
+-- Dependencies: 206
+-- Data for Name: dobavljac; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.dobavljac (pib, naziv, adresa) VALUES ('1234', 'naziv', 'adresa');
+
+
+--
+-- TOC entry 3074 (class 0 OID 16827)
+-- Dependencies: 212
+-- Data for Name: dobavljac_detalji; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.dobavljac_detalji (email, maticni_broj, tekuci_racun, telefon, pib) VALUES ('email', '121221312', '(17272721,unicredit)', '223223', '1234');
+
+
+--
+-- TOC entry 3071 (class 0 OID 16573)
+-- Dependencies: 208
+-- Data for Name: fabrika; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.fabrika (id_fabrike, naziv_fabrike) VALUES (1, 'Galenika');
+INSERT INTO public.fabrika (id_fabrike, naziv_fabrike) VALUES (2, 'Hemofarm');
+
+
+--
+-- TOC entry 3078 (class 0 OID 25173)
+-- Dependencies: 219
+-- Data for Name: inn; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.inn (id, naziv) VALUES (1, 'Ibuprofen');
+INSERT INTO public.inn (id, naziv) VALUES (2, 'metoklopramid');
+
+
+--
+-- TOC entry 3065 (class 0 OID 16446)
+-- Dependencies: 202
+-- Data for Name: istorija_cena; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.istorija_cena (id_proizvoda, datum_promene, cena) VALUES (2, '2019-02-02 00:00:00', 200);
+INSERT INTO public.istorija_cena (id_proizvoda, datum_promene, cena) VALUES (1, '2019-12-25 12:29:21.2507', 300);
+INSERT INTO public.istorija_cena (id_proizvoda, datum_promene, cena) VALUES (2, '2019-12-25 12:29:31.1194', 100);
+INSERT INTO public.istorija_cena (id_proizvoda, datum_promene, cena) VALUES (2, '2019-12-25 12:34:55.7802', 150);
+INSERT INTO public.istorija_cena (id_proizvoda, datum_promene, cena) VALUES (2, '2019-12-25 12:35:56.8585', 100);
+
+
+--
+-- TOC entry 3063 (class 0 OID 16417)
+-- Dependencies: 200
+-- Data for Name: jedinica_mere; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.jedinica_mere (id_jedinice_mere, naziv_jedinice_mere) VALUES (1, 'mg');
+INSERT INTO public.jedinica_mere (id_jedinice_mere, naziv_jedinice_mere) VALUES (2, 'g');
+
+
+--
+-- TOC entry 3075 (class 0 OID 25155)
+-- Dependencies: 216
+-- Data for Name: katalog_2019_01; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 3076 (class 0 OID 25158)
+-- Dependencies: 217
+-- Data for Name: katalog_2019_02; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.katalog_2019_02 (id_kataloga, datum, rb, id_dobavljaca) VALUES (11, '2019-02-02', '11', '1234');
+
+
+--
+-- TOC entry 3077 (class 0 OID 25161)
+-- Dependencies: 218
+-- Data for Name: katalog_2019_03; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 3064 (class 0 OID 16423)
+-- Dependencies: 201
+-- Data for Name: lek; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.lek (id_leka, doza_po_pakovanju, komad_po_pakovanju, jkl, id_jedinice_mere, id_tipa_pakovanja, id_inn) VALUES (3, 20, 44, '414313', 1, 1, 1);
+INSERT INTO public.lek (id_leka, doza_po_pakovanju, komad_po_pakovanju, jkl, id_jedinice_mere, id_tipa_pakovanja, id_inn) VALUES (1, 400, 20, '12345', 2, 3, 1);
+INSERT INTO public.lek (id_leka, doza_po_pakovanju, komad_po_pakovanju, jkl, id_jedinice_mere, id_tipa_pakovanja, id_inn) VALUES (2, 400, 20, '223344', 1, 1, 1);
+
+
+--
+-- TOC entry 3059 (class 0 OID 16394)
+-- Dependencies: 196
+-- Data for Name: proizvod; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) VALUES (4, NULL, 'klometol', NULL, NULL, NULL);
+INSERT INTO public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) VALUES (5, NULL, 'dimigal', NULL, NULL, NULL);
+INSERT INTO public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) VALUES (6, NULL, 'pancef', NULL, NULL, NULL);
+INSERT INTO public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) VALUES (3, NULL, 'ibuprofen', NULL, 'film 1', NULL);
+INSERT INTO public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) VALUES (2, 80, 'blokmax', 100, 'film 1', 2);
+INSERT INTO public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) VALUES (1, 80, 'brufen', 300, 'izmenjen tip3', 2);
+
+
+--
+-- TOC entry 3067 (class 0 OID 16461)
+-- Dependencies: 204
+-- Data for Name: skladisna_jedinica; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.skladisna_jedinica (id_skladisne_jedinice, naziv_skladisne_jedinice) VALUES (1, 'fioka1');
+INSERT INTO public.skladisna_jedinica (id_skladisne_jedinice, naziv_skladisne_jedinice) VALUES (2, 'magacin');
+
+
+--
+-- TOC entry 3068 (class 0 OID 16467)
+-- Dependencies: 205
+-- Data for Name: stanje; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.stanje (id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) VALUES (1, 1, '2019-09-09 00:00:00', 20);
+INSERT INTO public.stanje (id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) VALUES (1, 1, '2019-10-09 00:00:00', 50);
+INSERT INTO public.stanje (id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) VALUES (1, 2, '2019-09-08 00:00:00', 30);
+INSERT INTO public.stanje (id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) VALUES (2, 1, '2019-12-25 12:07:06.223899', 50);
+INSERT INTO public.stanje (id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) VALUES (2, 1, '2019-12-25 12:07:58.949984', 80);
+
+
+--
+-- TOC entry 3070 (class 0 OID 16560)
+-- Dependencies: 207
+-- Data for Name: stavka_kataloga; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 3072 (class 0 OID 16586)
+-- Dependencies: 209
+-- Data for Name: stavka_proizvod; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 3061 (class 0 OID 16409)
+-- Dependencies: 198
+-- Data for Name: tip_pakovanja; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.tip_pakovanja (id_tipa_pakovanja, naziv_tipa_pakovanja) VALUES (2, 'kapsulica');
+INSERT INTO public.tip_pakovanja (id_tipa_pakovanja, naziv_tipa_pakovanja) VALUES (1, 'film 1');
+INSERT INTO public.tip_pakovanja (id_tipa_pakovanja, naziv_tipa_pakovanja) VALUES (3, 'izmenjen tip3');
+
+
+--
+-- TOC entry 3113 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: inn_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.inn_id_seq', 2, true);
+
+
+--
+-- TOC entry 3114 (class 0 OID 0)
+-- Dependencies: 199
+-- Name: jedinica_mere_id_jedinice_mere_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.jedinica_mere_id_jedinice_mere_seq', 2, true);
+
+
+--
+-- TOC entry 3115 (class 0 OID 0)
+-- Dependencies: 211
+-- Name: sekvenca_proizvod; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.sekvenca_proizvod', 6, true);
+
+
+--
+-- TOC entry 3116 (class 0 OID 0)
+-- Dependencies: 203
+-- Name: skladisna_jedinica_id_skladisne_jedinice_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.skladisna_jedinica_id_skladisne_jedinice_seq', 1, false);
+
+
+--
+-- TOC entry 3117 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: tip_pakovanja_id_tipa_pakovanja_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tip_pakovanja_id_tipa_pakovanja_seq', 1, true);
+
+
+-- Completed on 2020-01-10 10:33:22 CET
+
+--
+-- PostgreSQL database dump complete
+--
+

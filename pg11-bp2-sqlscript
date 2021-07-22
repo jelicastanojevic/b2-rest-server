@@ -1,0 +1,2316 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.6
+-- Dumped by pg_dump version 11.6
+
+-- Started on 2020-01-10 22:17:05
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 650 (class 1247 OID 16396)
+-- Name: procenat; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.procenat AS (
+	vrednost numeric
+);
+
+
+ALTER TYPE public.procenat OWNER TO postgres;
+
+--
+-- TOC entry 653 (class 1247 OID 16399)
+-- Name: tekuci_racun; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.tekuci_racun AS (
+	broj_racuna text,
+	naziv_banke text
+);
+
+
+ALTER TYPE public.tekuci_racun OWNER TO postgres;
+
+--
+-- TOC entry 255 (class 1255 OID 16400)
+-- Name: cena_after_delete1(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.cena_after_delete1() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_trenutna_cena DECIMAL;
+      	BEGIN
+			--v_trenutna_cena := 0;
+			
+			--SELECT cena 
+			--INTO v_trenutna_cena
+			--FROM istorija_cena
+			--WHERE id_proizvoda = OLD.id_proizvoda AND datum_promene=(SELECT MAX(datum_promene) FROM istorija_cena where id_proizvoda = OLD.id_proizvoda AND datum_promene<=NOW());
+
+			--ALTER TABLE proizvod DISABLE TRIGGER proizvod_before_update;
+			--PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+			
+			--UPDATE proizvod SET trenutna_cena = v_trenutna_cena WHERE id_proizvoda = OLD.id_proizvoda;
+			
+			--ALTER TABLE proizvod ENABLE TRIGGER proizvod_before_update;
+			
+			RETURN OLD;
+		END;
+$$;
+
+
+ALTER FUNCTION public.cena_after_delete1() OWNER TO postgres;
+
+--
+-- TOC entry 253 (class 1255 OID 16401)
+-- Name: cena_after_insert1(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.cena_after_insert1() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_trenutna_cena DECIMAL;
+      	BEGIN
+			--v_trenutna_cena := 0;
+
+			--SELECT cena 
+			--INTO v_trenutna_cena
+			--FROM istorija_cena
+			--WHERE id_proizvoda = NEW.id_proizvoda AND datum_promene=(SELECT MAX(datum_promene) FROM istorija_cena where id_proizvoda = NEW.id_proizvoda AND datum_promene<=NOW());
+
+			--ALTER TABLE proizvod DISABLE TRIGGER proizvod_before_update;
+			--PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+
+			--UPDATE proizvod SET trenutna_cena = v_trenutna_cena WHERE id_proizvoda = new.id_proizvoda;
+			
+			--ALTER TABLE proizvod ENABLE TRIGGER proizvod_before_update;
+			
+			RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.cena_after_insert1() OWNER TO postgres;
+
+--
+-- TOC entry 252 (class 1255 OID 16402)
+-- Name: cena_after_insert_update_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.cena_after_insert_update_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$DECLARE num text := current_setting('myvars.idP'::text, true);
+BEGIN
+	CALL trenutna_cena(num::int);
+	RETURN OLD;
+END$$;
+
+
+ALTER FUNCTION public.cena_after_insert_update_delete() OWNER TO postgres;
+
+--
+-- TOC entry 231 (class 1255 OID 16403)
+-- Name: cena_after_update1(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.cena_after_update1() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_trenutna_cena DECIMAL;
+      	BEGIN
+			v_trenutna_cena := 0;
+
+			SELECT cena 
+			INTO v_trenutna_cena
+			FROM istorija_cena
+			WHERE id_proizvoda = NEW.id_proizvoda AND datum_promene=(SELECT MAX(datum_promene) FROM istorija_cena where id_proizvoda = NEW.id_proizvoda AND datum_promene<=NOW());
+
+			--ALTER TABLE proizvod DISABLE TRIGGER proizvod_before_update;
+			PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+			UPDATE proizvod SET trenutna_cena = v_trenutna_cena WHERE id_proizvoda = new.id_proizvoda;
+			
+			--ALTER TABLE proizvod ENABLE TRIGGER proizvod_before_update;
+			
+			RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.cena_after_update1() OWNER TO postgres;
+
+--
+-- TOC entry 260 (class 1255 OID 16404)
+-- Name: cena_before_insert_update_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.cena_before_insert_update_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$DECLARE x bigint;
+BEGIN
+	IF(TG_OP = 'INSERT' OR TG_OP= 'UPDATE') THEN
+		x := NEW.id_proizvoda;
+		PERFORM set_config('myvars.idP', x::text, FALSE);
+
+	ELSE
+		x := OLD.id_proizvoda;
+		PERFORM set_config('myvars.idP', x::text, FALSE);
+	END IF;
+	RETURN OLD;
+END$$;
+
+
+ALTER FUNCTION public.cena_before_insert_update_delete() OWNER TO postgres;
+
+--
+-- TOC entry 254 (class 1255 OID 16405)
+-- Name: dobavljac_instead_of_insert(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.dobavljac_instead_of_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		
+      	BEGIN
+			INSERT INTO dobavljac(pib,naziv,adresa) VALUES(NEW.pib, NEW.naziv, NEW.adresa);
+ 			INSERT INTO dobavljac_detalji(pib,email,maticni_broj,tekuci_racun,telefon) 
+ 			VALUES(NEW.pib, NEW.email, NEW.maticni_broj, NEW.tekuci_racun, NEW.telefon);
+			RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.dobavljac_instead_of_insert() OWNER TO postgres;
+
+--
+-- TOC entry 244 (class 1255 OID 16406)
+-- Name: dobavljac_instead_of_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.dobavljac_instead_of_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+      	BEGIN
+			UPDATE dobavljac SET naziv = NEW.naziv, adresa = NEW.adresa WHERE pib = NEW.pib;
+			UPDATE dobavljac SET email = NEW.email, maticni_broj = NEW.maticni_broj, tekuci_racun = NEW.tekuci_racun, telefon = NEW.telefon WHERE pib = NEW.pib;
+			RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.dobavljac_instead_of_update() OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1255 OID 16407)
+-- Name: katalog_insert_trigger(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.katalog_insert_trigger() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF ( NEW.datum >= DATE '2019-01-01' AND
+         NEW.datum < DATE '2019-02-01' ) THEN
+        INSERT INTO katalog_2019_01 VALUES (NEW.*);
+    ELSIF ( NEW.datum >= DATE '2019-02-01' AND
+            NEW.datum < DATE '2019-03-01' ) THEN
+        INSERT INTO katalog_2019_02 VALUES (NEW.*);
+    ELSIF ( NEW.datum >= DATE '2019-03-01' AND
+            NEW.datum < DATE '2019-04-01' ) THEN
+        INSERT INTO katalog_2019_03 VALUES (NEW.*);
+    ELSIF ( NEW.datum >= DATE '2019-04-01' AND
+            NEW.datum < DATE '2019-05-01' ) THEN
+        INSERT INTO katalog_2019_04 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-05-01' AND
+            NEW.datum < DATE '2019-06-01' ) THEN
+        INSERT INTO katalog_2019_05 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-06-01' AND
+            NEW.datum < DATE '2019-07-01' ) THEN
+        INSERT INTO katalog_2019_06 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-07-01' AND
+            NEW.datum < DATE '2019-08-01' ) THEN
+        INSERT INTO katalog_2019_07 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-08-01' AND
+            NEW.datum < DATE '2019-09-01' ) THEN
+        INSERT INTO katalog_2019_08 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-09-01' AND
+            NEW.datum < DATE '2019-10-01' ) THEN
+        INSERT INTO katalog_2019_09 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-10-01' AND
+            NEW.datum < DATE '2019-11-01' ) THEN
+        INSERT INTO katalog_2019_10 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-11-01' AND
+            NEW.datum < DATE '2019-12-01' ) THEN
+        INSERT INTO katalog_2019_11 VALUES (NEW.*);
+	ELSIF ( NEW.datum >= DATE '2019-12-01' AND
+            NEW.datum < DATE '2020-01-01' ) THEN
+        INSERT INTO katalog_2019_12 VALUES (NEW.*);
+	ELSE
+        RAISE EXCEPTION 'Date out of range.  Fix the katalog_insert_trigger() function!';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION public.katalog_insert_trigger() OWNER TO postgres;
+
+--
+-- TOC entry 246 (class 1255 OID 16408)
+-- Name: katalog_partition_creation(date, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.katalog_partition_creation(date, date) RETURNS void
+    LANGUAGE plpgsql
+    AS $_$DECLARE
+	create_query text;
+	index_query text;
+BEGIN
+	FOR create_query, index_query IN SELECT
+			'create table katalog_'
+			|| TO_CHAR(d, 'YYYY_MM')
+			|| ' partition of katalog '
+			|| ' FOR VALUES FROM ('''
+			|| TO_CHAR( d, 'YYYY-MM-DD')
+			|| ''') TO ('''
+			|| TO_CHAR( d + INTERVAL '1 month', 'YYYY-MM-DD' )
+			|| ''');'
+			'create index katalog_'
+			|| TO_CHAR( d, 'YYYY_MM' )
+			|| '_datum on katalog_' 
+			|| TO_CHAR( d, 'YYYY_MM' )
+			|| ' ( datum );'
+		FROM generate_series( $1, $2, '1 month' ) AS d
+	LOOP
+		EXECUTE create_query;
+		EXECUTE index_query;
+	END LOOP;
+END;
+$_$;
+
+
+ALTER FUNCTION public.katalog_partition_creation(date, date) OWNER TO postgres;
+
+--
+-- TOC entry 247 (class 1255 OID 16409)
+-- Name: katalog_partition_function(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.katalog_partition_function() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $_$BEGIN
+	EXECUTE 'insert into katalog_'
+		|| to_char( NEW.datum, 'YYYY_MM' )
+		|| ' values ( $1, $2, $3, $4 )' USING NEW.id_kataloga, NEW.datum, NEW.rb, NEW.id_dobavljaca;
+	RETURN NULL;
+END;
+$_$;
+
+
+ALTER FUNCTION public.katalog_partition_function() OWNER TO postgres;
+
+--
+-- TOC entry 264 (class 1255 OID 16410)
+-- Name: lek_after_insert(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.lek_after_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_naziv_tipa_pakovanja VARCHAR(45);
+      	BEGIN
+			SELECT naziv_tipa_pakovanja 
+			INTO v_naziv_tipa_pakovanja
+			FROM public.tip_pakovanja
+			WHERE id_tipa_pakovanja = new.id_tipa_pakovanja;
+
+			--ALTER TABLE proizvod DISABLE TRIGGER proizvod_before_update;
+			PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+			UPDATE public.proizvod SET naziv_tipa_pakovanja = v_naziv_tipa_pakovanja WHERE id_proizvoda = new.id_leka;
+
+			--ALTER TABLE proizvod ENABLE TRIGGER proizvod_before_update;
+			
+			RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.lek_after_insert() OWNER TO postgres;
+
+--
+-- TOC entry 261 (class 1255 OID 16411)
+-- Name: lek_after_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.lek_after_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_naziv_tipa_pakovanja VARCHAR(45);
+      	BEGIN
+				SELECT naziv_tipa_pakovanja 
+				INTO v_naziv_tipa_pakovanja
+				FROM tip_pakovanja
+				WHERE id_tipa_pakovanja = NEW.id_tipa_pakovanja;
+				
+				--ALTER TABLE proizvod DISABLE TRIGGER proizvod_before_update;
+				PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+				UPDATE proizvod SET naziv_tipa_pakovanja = v_naziv_tipa_pakovanja WHERE id_proizvoda = NEW.id_leka;
+				
+				--ALTER TABLE proizvod ENABLE TRIGGER proizvod_before_update;
+
+				RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.lek_after_update() OWNER TO postgres;
+
+--
+-- TOC entry 262 (class 1255 OID 16412)
+-- Name: proizvod_before_insert(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.proizvod_before_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$    BEGIN
+		IF NEW.naziv_tipa_pakovanja IS DISTINCT FROM NULL THEN
+			RAISE EXCEPTION 'Ne mozete direktno uneti naziv_tipa_pakovanja!';
+   		END IF;
+    
+		IF NEW.trenutna_cena IS DISTINCT FROM NULL THEN
+        	RAISE EXCEPTION 'Ne mozete direktno uneti trenutna_cena!';
+   	 	END IF;
+    
+    	IF NEW.kolicina IS DISTINCT FROM NULL THEN
+        	RAISE EXCEPTION 'Ne mozete direktno uneti kolocinu!';
+    	END IF;
+		
+		IF NEW.id_fabrike IS DISTINCT FROM NULL THEN
+			RAISE EXCEPTION 'Ne mozete direktno uneti id_fabrike!';
+   		END IF;
+    END;
+$$;
+
+
+ALTER FUNCTION public.proizvod_before_insert() OWNER TO postgres;
+
+--
+-- TOC entry 263 (class 1255 OID 16413)
+-- Name: proizvod_before_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.proizvod_before_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$	DECLARE v_naziv_pakovanja VARCHAR(255);
+     	 v_trenutna_cena NUMERIC;
+     	 v_kolicina NUMERIC;
+		 v_id_fabrike NUMERIC;
+    BEGIN
+		 --SELECT t.naziv_tipa_pakovanja 
+		-- INTO v_naziv_pakovanja 
+		 --FROM lek l JOIN tip_pakovanja t on l.id_tipa_pakovanja = t.id_tipa_pakovanja 
+		-- WHERE l.id_leka = NEW.id_proizvoda;
+
+		--SELECT cena 
+		--INTO v_trenutna_cena
+		--FROM istorija_cena
+		--WHERE id_proizvoda = NEW.id_proizvoda AND datum_promene=(SELECT MAX(datum_promene) FROM istorija_cena where id_proizvoda = NEW.id_proizvoda AND datum_promene<=NOW());
+
+		--SELECT SUM(s3.kolicina) INTO v_kolicina FROM (SELECT s.kolicina, s.id_proizvoda FROM stanje AS s WHERE NOT EXISTS (select 1 from stanje AS s1 where s1.id_skladisne_jedinice = s.id_skladisne_jedinice and s1.id_proizvoda = s.id_proizvoda and s1.datum_promene > s.datum_promene)) AS s3 WHERE s3.id_proizvoda = NEW.id_proizvoda;
+
+ 		--SELECT sk.id_fabrike 
+		--INTO v_id_fabrike
+		--FROM stavka_proizvod sp 
+		--JOIN proizvod p on p.id_proizvoda = sp.id_proizvoda 
+		--JOIN stavka_kataloga sk on sk.id_kataloga = sp.id_kataloga and sk.rb_stavke = sp.rb_stavke
+		--WHERE p.id_proizvoda = NEW.id_proizvoda LIMIT 1;
+
+		IF NEW.naziv_tipa_pakovanja IS DISTINCT FROM OLD.naziv_tipa_pakovanja THEN
+			RAISE EXCEPTION 'Ne mozete direktno menjati kolonu naziv_tipa_pakovanja!';
+		END IF;
+
+		IF NEW.trenutna_cena IS DISTINCT FROM OLD.trenutna_cena THEN
+			RAISE EXCEPTION 'Ne mozete direktno menjati kolonu trenutna_cena!';
+		END IF;
+
+		IF NEW.kolicina IS DISTINCT FROM OLD.kolicina THEN
+			RAISE EXCEPTION 'Ne mozete direktno menjati kolonu kolicina!';
+		END IF;
+		
+		IF NEW.id_fabrike IS DISTINCT FROM v_id_fabrike THEN
+			RAISE EXCEPTION 'Ne mozete direktno menjati kolonu id_fabrike!';
+		END IF;
+		
+		RETURN NEW;
+	END;
+$$;
+
+
+ALTER FUNCTION public.proizvod_before_update() OWNER TO postgres;
+
+--
+-- TOC entry 259 (class 1255 OID 16661)
+-- Name: stanje(integer); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.stanje(id_pr integer)
+    LANGUAGE plpgsql
+    AS $$DECLARE v_kolicina DECIMAL;
+BEGIN
+    v_kolicina := 0;
+    
+	SELECT SUM(s3.kolicina) INTO v_kolicina FROM (SELECT s.kolicina, s.id_proizvoda FROM public.stanje s WHERE NOT EXISTS (select 1 from public.stanje s1 where s1.id_skladisne_jedinice = s.id_skladisne_jedinice and s1.id_proizvoda = s.id_proizvoda and s1.datum_promene > s.datum_promene)) s3 WHERE s3.id_proizvoda = id_pr;
+	
+	PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+    UPDATE public.proizvod SET kolicina = v_kolicina WHERE id_proizvoda = id_pr;
+END;
+$$;
+
+
+ALTER PROCEDURE public.stanje(id_pr integer) OWNER TO postgres;
+
+--
+-- TOC entry 268 (class 1255 OID 16414)
+-- Name: stanje_after_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stanje_after_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_kolicina DECIMAL;
+      	BEGIN
+        --v_kolicina := 0;
+    
+		--SELECT SUM(s3.kolicina) INTO v_kolicina FROM (SELECT s.kolicina, s.id_proizvoda FROM stanje s WHERE NOT EXISTS (select 1 from stanje s1 where s1.id_skladisne_jedinice = s.id_skladisne_jedinice and s1.id_proizvoda = s.id_proizvoda and s1.datum_promene > s.datum_promene)) s3 WHERE s3.id_proizvoda = OLD.id_proizvoda;
+        
+		--PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+        --UPDATE proizvod SET kolicina = v_kolicina WHERE id_proizvoda = OLD.id_proizvoda;
+			
+		RETURN OLD;
+		END;
+$$;
+
+
+ALTER FUNCTION public.stanje_after_delete() OWNER TO postgres;
+
+--
+-- TOC entry 266 (class 1255 OID 16415)
+-- Name: stanje_after_insert(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stanje_after_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_kolicina DECIMAL;
+      	BEGIN
+        --v_kolicina := 0;
+    
+		--SELECT SUM(s3.kolicina) INTO v_kolicina FROM (SELECT s.kolicina, s.id_proizvoda FROM public.stanje s WHERE NOT EXISTS (select 1 from public.stanje s1 where s1.id_skladisne_jedinice = s.id_skladisne_jedinice and s1.id_proizvoda = s.id_proizvoda and s1.datum_promene > s.datum_promene)) s3 WHERE s3.id_proizvoda = NEW.id_proizvoda;
+        
+		--PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+        --UPDATE public.proizvod SET kolicina = v_kolicina WHERE id_proizvoda = new.id_proizvoda;
+		
+		
+		RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.stanje_after_insert() OWNER TO postgres;
+
+--
+-- TOC entry 257 (class 1255 OID 16662)
+-- Name: stanje_after_insert_update_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stanje_after_insert_update_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$DECLARE num text := current_setting('myvars.idPr'::text, true);
+BEGIN
+	CALL stanje(num::int);
+	RETURN NEW;
+END$$;
+
+
+ALTER FUNCTION public.stanje_after_insert_update_delete() OWNER TO postgres;
+
+--
+-- TOC entry 265 (class 1255 OID 16416)
+-- Name: stanje_after_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stanje_after_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		DECLARE v_kolicina DECIMAL;
+      	BEGIN
+       -- v_kolicina := 0;
+    
+		--SELECT SUM(s3.kolicina) INTO v_kolicina FROM (SELECT s.kolicina, s.id_proizvoda FROM stanje s WHERE NOT EXISTS (select 1 from stanje s1 where s1.id_skladisne_jedinice = s.id_skladisne_jedinice and s1.id_proizvoda = s.id_proizvoda and s1.datum_promene > s.datum_promene)) s3 WHERE s3.id_proizvoda = NEW.id_proizvoda;
+      --PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+       -- UPDATE proizvod SET kolicina = v_kolicina WHERE id_proizvoda = new.id_proizvoda;
+
+		RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.stanje_after_update() OWNER TO postgres;
+
+--
+-- TOC entry 258 (class 1255 OID 16660)
+-- Name: stanje_before_insert_update_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stanje_before_insert_update_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$DECLARE x bigint;
+BEGIN
+	IF(TG_OP = 'INSERT' OR TG_OP= 'UPDATE') THEN
+		x := NEW.id_proizvoda;
+		PERFORM set_config('myvars.idPr', x::text, FALSE);
+	ELSE
+		x := OLD.id_proizvoda;
+		PERFORM set_config('myvars.idPr', x::text, FALSE);
+	END IF;
+	RETURN OLD;
+END;$$;
+
+
+ALTER FUNCTION public.stanje_before_insert_update_delete() OWNER TO postgres;
+
+--
+-- TOC entry 248 (class 1255 OID 16417)
+-- Name: stavka_kataloga_after_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stavka_kataloga_after_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		 DECLARE v_id_proizvoda NUMERIC;
+		 		 row RECORD;
+   		 BEGIN
+			SELECT p.id_proizvoda 
+			INTO v_id_proizvoda 
+			FROM stavka_kataloga sk
+			JOIN stavka_proizvod sp ON sk.id_kataloga = sp.id_kataloga and sk.rb_stavke = sp.rb_stavke
+			JOIN proizvod p on p.id_proizvoda = sp.id_proizvoda
+			WHERE sk.id_kataloga = NEW.id_kataloga AND sk.rb_stavke = NEW.rb_stavke;
+
+
+			--ALTER TABLE proizvod DISABLE TRIGGER before_update_proizvod;
+			PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+
+			UPDATE proizvod SET id_fabrike = NEW.id_fabrike WHERE id_proizvoda = v_id_proizvoda;
+			
+			
+			--ALTER TABLE proizvod ENABLE TRIGGER before_update_proizvod;
+
+				
+				FOR row IN (SELECT sk.id_kataloga, sk.rb_stavke
+							FROM stavka_proizvod sp 
+							JOIN proizvod p ON p.id_proizvoda = sp.id_proizvoda 
+							JOIN stavka_kataloga sk on sk.id_kataloga = sp.id_kataloga and sk.rb_stavke = sp.rb_stavke
+							WHERE p.id_proizvoda = v_id_proizvoda)
+				LOOP
+					--RAISE EXCEPTION '% %', items.id_kataloga, items.rb_stavke;
+        			UPDATE stavka_kataloga SET id_fabrike = NEW.id_fabrike
+					WHERE id_kataloga = row.id_kataloga and rb_stavke = row.rb_stavke;
+    			END LOOP;
+				
+		RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.stavka_kataloga_after_update() OWNER TO postgres;
+
+--
+-- TOC entry 249 (class 1255 OID 16418)
+-- Name: stavka_proizvod_after_insert(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stavka_proizvod_after_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		 DECLARE v_id_fabrike NUMERIC;
+		 row RECORD;
+    BEGIN
+			SELECT id_fabrike 
+			INTO v_id_fabrike 
+			FROM stavka_kataloga
+			WHERE id_kataloga = NEW.id_kataloga AND rb_stavke = NEW.rb_stavke;
+
+				FOR row IN (SELECT sk.id_kataloga, sk.rb_stavke
+							FROM stavka_proizvod sp 
+							JOIN proizvod p ON p.id_proizvoda = sp.id_proizvoda 
+							JOIN stavka_kataloga sk on sk.id_kataloga = sp.id_kataloga and sk.rb_stavke = sp.rb_stavke
+							WHERE p.id_proizvoda = NEW.id_proizvoda)
+				LOOP
+        			UPDATE stavka_kataloga SET id_fabrike = v_id_fabrike
+					WHERE id_kataloga = row.id_kataloga and rb_stavke = row.rb_stavke;
+    			END LOOP;
+
+
+			--ALTER TABLE proizvod DISABLE TRIGGER before_update_proizvod;
+			PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+
+			UPDATE proizvod SET id_fabrike = v_id_fabrike WHERE id_proizvoda = NEW.id_proizvoda;
+				
+				
+				
+			--ALTER TABLE proizvod ENABLE TRIGGER before_update_proizvod;
+
+		RETURN NEW;
+		END;
+
+$$;
+
+
+ALTER FUNCTION public.stavka_proizvod_after_insert() OWNER TO postgres;
+
+--
+-- TOC entry 250 (class 1255 OID 16419)
+-- Name: stavka_proizvod_after_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.stavka_proizvod_after_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$		 DECLARE v_id_fabrike NUMERIC;
+				 row RECORD;
+   		 BEGIN
+			SELECT id_fabrike 
+			INTO v_id_fabrike 
+			FROM stavka_kataloga
+			WHERE id_kataloga = NEW.id_kataloga AND rb_stavke = NEW.rb_stavke;
+						
+			FOR row IN (SELECT sk.id_kataloga, sk.rb_stavke
+							FROM stavka_proizvod sp 
+							JOIN proizvod p ON p.id_proizvoda = sp.id_proizvoda 
+							JOIN stavka_kataloga sk on sk.id_kataloga = sp.id_kataloga and sk.rb_stavke = sp.rb_stavke
+							WHERE p.id_proizvoda = NEW.id_proizvoda)
+				LOOP
+        			UPDATE stavka_kataloga SET id_fabrike = v_id_fabrike
+					WHERE id_kataloga = row.id_kataloga and rb_stavke = row.rb_stavke;
+    			END LOOP;
+
+			
+			--ALTER TABLE proizvod DISABLE TRIGGER before_update_proizvod;
+			PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+
+			UPDATE proizvod SET id_fabrike = v_id_fabrike WHERE id_proizvoda = NEW.id_proizvoda;
+		
+		
+			--ALTER TABLE proizvod ENABLE TRIGGER before_update_proizvod;
+
+		
+		RETURN NEW;
+		END;
+$$;
+
+
+ALTER FUNCTION public.stavka_proizvod_after_update() OWNER TO postgres;
+
+--
+-- TOC entry 251 (class 1255 OID 16420)
+-- Name: test_partition_creation(date, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.test_partition_creation(date, date) RETURNS void
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+	create_query text;
+	index_query text;
+BEGIN
+	FOR create_query, index_query IN SELECT
+			'create table katalog_'
+			|| TO_CHAR( d, 'YYYY_MM' )
+			|| ' ( check( datum >= date '''
+			|| TO_CHAR( d, 'YYYY-MM-DD' )
+			|| ''' and datum < date '''
+			|| TO_CHAR( d + INTERVAL '1 month', 'YYYY-MM-DD' )
+			|| ''' ) ) inherits ( katalog );',
+			'create index katalog_'
+			|| TO_CHAR( d, 'YYYY_MM' )
+			|| '_datum on katalog_' 
+			|| TO_CHAR( d, 'YYYY_MM' )
+			|| ' ( datum );'
+		FROM generate_series( $1, $2, '1 month' ) AS d
+	LOOP
+		EXECUTE create_query;
+		EXECUTE index_query;
+	END LOOP;
+END;
+$_$;
+
+
+ALTER FUNCTION public.test_partition_creation(date, date) OWNER TO postgres;
+
+--
+-- TOC entry 267 (class 1255 OID 16421)
+-- Name: tip_pakovanja_after_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.tip_pakovanja_after_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$    BEGIN
+		--ALTER TABLE proizvod DISABLE TRIGGER proizvod_before_update;
+		PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+		UPDATE proizvod 
+    	SET naziv_tipa_pakovanja = NEW.naziv_tipa_pakovanja 
+    	WHERE id_proizvoda IN (SELECT id_leka 
+								FROM lek 
+                                WHERE id_tipa_pakovanja = NEW.id_tipa_pakovanja);  
+   		--ALTER TABLE proizvod ENABLE TRIGGER proizvod_before_update;
+	
+		RETURN NEW;
+		
+   END;
+$$;
+
+
+ALTER FUNCTION public.tip_pakovanja_after_update() OWNER TO postgres;
+
+--
+-- TOC entry 269 (class 1255 OID 16658)
+-- Name: trenutna_cena(integer); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.trenutna_cena(id_pr integer)
+    LANGUAGE plpgsql
+    AS $$DECLARE v_trenutna_cena DECIMAL;
+BEGIN
+	v_trenutna_cena := 0;
+
+	SELECT cena 
+	INTO v_trenutna_cena
+	FROM istorija_cena
+	WHERE id_proizvoda = id_pr AND datum_promene=(SELECT MAX(datum_promene) FROM istorija_cena where id_proizvoda = id_pr AND datum_promene<=NOW());
+
+	PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+	UPDATE proizvod SET trenutna_cena = v_trenutna_cena WHERE id_proizvoda = id_pr;
+END
+$$;
+
+
+ALTER PROCEDURE public.trenutna_cena(id_pr integer) OWNER TO postgres;
+
+--
+-- TOC entry 256 (class 1255 OID 16422)
+-- Name: trenutna_cenaa(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trenutna_cenaa(integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE v_trenutna_cena DECIMAL;
+BEGIN
+	v_trenutna_cena := 0;
+
+	SELECT cena 
+	INTO v_trenutna_cena
+	FROM istorija_cena
+	WHERE id_proizvoda = $1 AND datum_promene=(SELECT MAX(datum_promene) FROM istorija_cena where id_proizvoda = $1 AND datum_promene<=NOW());
+
+	PERFORM set_config('myvars.disabled', 'TRUE', FALSE);
+		
+	UPDATE proizvod SET trenutna_cena = v_trenutna_cena WHERE id_proizvoda = $1;
+	RETURN $1;
+END;
+$_$;
+
+
+ALTER FUNCTION public.trenutna_cenaa(integer) OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 198 (class 1259 OID 16423)
+-- Name: dobavljac; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.dobavljac (
+    pib character varying(55) NOT NULL,
+    naziv character varying(55),
+    adresa character varying(55)
+);
+
+
+ALTER TABLE public.dobavljac OWNER TO postgres;
+
+--
+-- TOC entry 199 (class 1259 OID 16426)
+-- Name: dobavljac_detalji; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.dobavljac_detalji (
+    email character varying,
+    maticni_broj character varying,
+    tekuci_racun public.tekuci_racun,
+    telefon character varying,
+    pib character varying NOT NULL
+);
+
+
+ALTER TABLE public.dobavljac_detalji OWNER TO postgres;
+
+--
+-- TOC entry 200 (class 1259 OID 16432)
+-- Name: dobavljac_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.dobavljac_view AS
+ SELECT d.pib,
+    d.naziv,
+    d.adresa,
+    dd.email,
+    dd.maticni_broj,
+    dd.tekuci_racun,
+    dd.telefon
+   FROM public.dobavljac d,
+    public.dobavljac_detalji dd
+  WHERE ((d.pib)::text = (dd.pib)::text);
+
+
+ALTER TABLE public.dobavljac_view OWNER TO postgres;
+
+--
+-- TOC entry 201 (class 1259 OID 16436)
+-- Name: fabrika; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.fabrika (
+    id_fabrike bigint NOT NULL,
+    naziv_fabrike character varying
+);
+
+
+ALTER TABLE public.fabrika OWNER TO postgres;
+
+--
+-- TOC entry 202 (class 1259 OID 16442)
+-- Name: inn_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.inn_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.inn_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 203 (class 1259 OID 16444)
+-- Name: inn; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.inn (
+    id integer DEFAULT nextval('public.inn_id_seq'::regclass) NOT NULL,
+    naziv character varying(15)
+);
+
+
+ALTER TABLE public.inn OWNER TO postgres;
+
+--
+-- TOC entry 204 (class 1259 OID 16448)
+-- Name: istorija_cena; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.istorija_cena (
+    id_proizvoda bigint NOT NULL,
+    datum_promene timestamp(4) without time zone DEFAULT now() NOT NULL,
+    cena numeric
+);
+
+
+ALTER TABLE public.istorija_cena OWNER TO postgres;
+
+--
+-- TOC entry 205 (class 1259 OID 16455)
+-- Name: jedinica_mere; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.jedinica_mere (
+    id_jedinice_mere integer NOT NULL,
+    naziv_jedinice_mere character varying(255)
+);
+
+
+ALTER TABLE public.jedinica_mere OWNER TO postgres;
+
+--
+-- TOC entry 206 (class 1259 OID 16458)
+-- Name: jedinica_mere_id_jedinice_mere_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.jedinica_mere_id_jedinice_mere_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jedinica_mere_id_jedinice_mere_seq OWNER TO postgres;
+
+--
+-- TOC entry 3075 (class 0 OID 0)
+-- Dependencies: 206
+-- Name: jedinica_mere_id_jedinice_mere_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.jedinica_mere_id_jedinice_mere_seq OWNED BY public.jedinica_mere.id_jedinice_mere;
+
+
+--
+-- TOC entry 207 (class 1259 OID 16460)
+-- Name: katalog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+
+
+ALTER TABLE public.katalog OWNER TO postgres;
+
+--
+-- TOC entry 208 (class 1259 OID 16463)
+-- Name: katalog_2019_01; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_01 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_01 FOR VALUES FROM ('2019-01-01') TO ('2019-02-01');
+
+
+ALTER TABLE public.katalog_2019_01 OWNER TO postgres;
+
+--
+-- TOC entry 209 (class 1259 OID 16466)
+-- Name: katalog_2019_02; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_02 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_02 FOR VALUES FROM ('2019-02-01') TO ('2019-03-01');
+
+
+ALTER TABLE public.katalog_2019_02 OWNER TO postgres;
+
+--
+-- TOC entry 210 (class 1259 OID 16469)
+-- Name: katalog_2019_03; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_03 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_03 FOR VALUES FROM ('2019-03-01') TO ('2019-04-01');
+
+
+ALTER TABLE public.katalog_2019_03 OWNER TO postgres;
+
+--
+-- TOC entry 211 (class 1259 OID 16472)
+-- Name: katalog_2019_04; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_04 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_04 FOR VALUES FROM ('2019-04-01') TO ('2019-05-01');
+
+
+ALTER TABLE public.katalog_2019_04 OWNER TO postgres;
+
+--
+-- TOC entry 212 (class 1259 OID 16475)
+-- Name: katalog_2019_05; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_05 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_05 FOR VALUES FROM ('2019-05-01') TO ('2019-06-01');
+
+
+ALTER TABLE public.katalog_2019_05 OWNER TO postgres;
+
+--
+-- TOC entry 213 (class 1259 OID 16478)
+-- Name: katalog_2019_06; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_06 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_06 FOR VALUES FROM ('2019-06-01') TO ('2019-07-01');
+
+
+ALTER TABLE public.katalog_2019_06 OWNER TO postgres;
+
+--
+-- TOC entry 214 (class 1259 OID 16481)
+-- Name: katalog_2019_07; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_07 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_07 FOR VALUES FROM ('2019-07-01') TO ('2019-08-01');
+
+
+ALTER TABLE public.katalog_2019_07 OWNER TO postgres;
+
+--
+-- TOC entry 215 (class 1259 OID 16484)
+-- Name: katalog_2019_08; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_08 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_08 FOR VALUES FROM ('2019-08-01') TO ('2019-09-01');
+
+
+ALTER TABLE public.katalog_2019_08 OWNER TO postgres;
+
+--
+-- TOC entry 216 (class 1259 OID 16487)
+-- Name: katalog_2019_09; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_09 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_09 FOR VALUES FROM ('2019-09-01') TO ('2019-10-01');
+
+
+ALTER TABLE public.katalog_2019_09 OWNER TO postgres;
+
+--
+-- TOC entry 217 (class 1259 OID 16490)
+-- Name: katalog_2019_10; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_10 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_10 FOR VALUES FROM ('2019-10-01') TO ('2019-11-01');
+
+
+ALTER TABLE public.katalog_2019_10 OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 16493)
+-- Name: katalog_2019_11; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_11 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_11 FOR VALUES FROM ('2019-11-01') TO ('2019-12-01');
+
+
+ALTER TABLE public.katalog_2019_11 OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 16496)
+-- Name: katalog_2019_12; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2019_12 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2019_12 FOR VALUES FROM ('2019-12-01') TO ('2020-01-01');
+
+
+ALTER TABLE public.katalog_2019_12 OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 16499)
+-- Name: katalog_2020_01; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.katalog_2020_01 (
+    id_kataloga integer NOT NULL,
+    datum date NOT NULL,
+    rb character varying(15),
+    id_dobavljaca character varying(55)
+)
+PARTITION BY RANGE (datum);
+ALTER TABLE ONLY public.katalog ATTACH PARTITION public.katalog_2020_01 FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
+
+
+ALTER TABLE public.katalog_2020_01 OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 16502)
+-- Name: lek; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.lek (
+    id_leka bigint NOT NULL,
+    doza_po_pakovanju numeric,
+    komad_po_pakovanju numeric,
+    jkl character varying(55),
+    id_jedinice_mere integer,
+    id_tipa_pakovanja integer,
+    id_inn integer
+);
+
+
+ALTER TABLE public.lek OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 16508)
+-- Name: sekvenca_proizvod; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.sekvenca_proizvod
+    START WITH 5
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.sekvenca_proizvod OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 16510)
+-- Name: proizvod; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.proizvod (
+    id_proizvoda bigint DEFAULT nextval('public.sekvenca_proizvod'::regclass) NOT NULL,
+    kolicina numeric,
+    naziv_proizvoda character varying(255),
+    trenutna_cena numeric,
+    naziv_tipa_pakovanja character varying(255),
+    id_fabrike bigint
+);
+
+
+ALTER TABLE public.proizvod OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 16517)
+-- Name: skladisna_jedinica; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.skladisna_jedinica (
+    id_skladisne_jedinice integer NOT NULL,
+    naziv_skladisne_jedinice character varying(255)
+);
+
+
+ALTER TABLE public.skladisna_jedinica OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 16520)
+-- Name: skladisna_jedinica_id_skladisne_jedinice_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.skladisna_jedinica_id_skladisne_jedinice_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.skladisna_jedinica_id_skladisne_jedinice_seq OWNER TO postgres;
+
+--
+-- TOC entry 3080 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: skladisna_jedinica_id_skladisne_jedinice_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.skladisna_jedinica_id_skladisne_jedinice_seq OWNED BY public.skladisna_jedinica.id_skladisne_jedinice;
+
+
+--
+-- TOC entry 226 (class 1259 OID 16522)
+-- Name: stanje; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.stanje (
+    id_proizvoda bigint NOT NULL,
+    id_skladisne_jedinice integer NOT NULL,
+    datum_promene timestamp without time zone DEFAULT now() NOT NULL,
+    kolicina numeric
+);
+
+
+ALTER TABLE public.stanje OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 16529)
+-- Name: stavka_kataloga; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.stavka_kataloga (
+    id_kataloga bigint NOT NULL,
+    rb_stavke bigint NOT NULL,
+    cena numeric,
+    jm character varying(10),
+    naziv character varying(55),
+    id_fabrike bigint,
+    popust public.procenat
+);
+
+
+ALTER TABLE public.stavka_kataloga OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 16535)
+-- Name: stavka_proizvod; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.stavka_proizvod (
+    id_kataloga bigint NOT NULL,
+    id_proizvoda bigint NOT NULL,
+    rb_stavke bigint NOT NULL
+);
+
+
+ALTER TABLE public.stavka_proizvod OWNER TO postgres;
+
+--
+-- TOC entry 229 (class 1259 OID 16538)
+-- Name: tip_pakovanja; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tip_pakovanja (
+    id_tipa_pakovanja integer NOT NULL,
+    naziv_tipa_pakovanja character varying(255)
+);
+
+
+ALTER TABLE public.tip_pakovanja OWNER TO postgres;
+
+--
+-- TOC entry 230 (class 1259 OID 16541)
+-- Name: tip_pakovanja_id_tipa_pakovanja_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tip_pakovanja_id_tipa_pakovanja_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.tip_pakovanja_id_tipa_pakovanja_seq OWNER TO postgres;
+
+--
+-- TOC entry 3084 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: tip_pakovanja_id_tipa_pakovanja_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tip_pakovanja_id_tipa_pakovanja_seq OWNED BY public.tip_pakovanja.id_tipa_pakovanja;
+
+
+--
+-- TOC entry 2845 (class 2604 OID 16543)
+-- Name: jedinica_mere id_jedinice_mere; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.jedinica_mere ALTER COLUMN id_jedinice_mere SET DEFAULT nextval('public.jedinica_mere_id_jedinice_mere_seq'::regclass);
+
+
+--
+-- TOC entry 2847 (class 2604 OID 16544)
+-- Name: skladisna_jedinica id_skladisne_jedinice; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.skladisna_jedinica ALTER COLUMN id_skladisne_jedinice SET DEFAULT nextval('public.skladisna_jedinica_id_skladisne_jedinice_seq'::regclass);
+
+
+--
+-- TOC entry 2849 (class 2604 OID 16545)
+-- Name: tip_pakovanja id_tipa_pakovanja; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tip_pakovanja ALTER COLUMN id_tipa_pakovanja SET DEFAULT nextval('public.tip_pakovanja_id_tipa_pakovanja_seq'::regclass);
+
+
+--
+-- TOC entry 3036 (class 0 OID 16423)
+-- Dependencies: 198
+-- Data for Name: dobavljac; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.dobavljac (pib, naziv, adresa) FROM stdin;
+1234	naziv	adresa
+\.
+
+
+--
+-- TOC entry 3037 (class 0 OID 16426)
+-- Dependencies: 199
+-- Data for Name: dobavljac_detalji; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.dobavljac_detalji (email, maticni_broj, tekuci_racun, telefon, pib) FROM stdin;
+email	121221312	(17272721,unicredit)	223223	1234
+\.
+
+
+--
+-- TOC entry 3038 (class 0 OID 16436)
+-- Dependencies: 201
+-- Data for Name: fabrika; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.fabrika (id_fabrike, naziv_fabrike) FROM stdin;
+1	Galenika
+2	Hemofarm
+\.
+
+
+--
+-- TOC entry 3040 (class 0 OID 16444)
+-- Dependencies: 203
+-- Data for Name: inn; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.inn (id, naziv) FROM stdin;
+1	Ibuprofen
+2	metoklopramid
+\.
+
+
+--
+-- TOC entry 3041 (class 0 OID 16448)
+-- Dependencies: 204
+-- Data for Name: istorija_cena; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.istorija_cena (id_proizvoda, datum_promene, cena) FROM stdin;
+2	2019-02-02 00:00:00	200
+1	2019-12-25 12:29:21.2507	300
+2	2019-12-25 12:29:31.1194	100
+2	2019-12-25 12:34:55.7802	150
+2	2019-12-25 12:35:56.8585	100
+2	2019-12-29 00:00:00	33
+2	2019-12-29 00:00:05	44
+1	2019-12-28 00:00:00	350
+\.
+
+
+--
+-- TOC entry 3042 (class 0 OID 16455)
+-- Dependencies: 205
+-- Data for Name: jedinica_mere; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.jedinica_mere (id_jedinice_mere, naziv_jedinice_mere) FROM stdin;
+1	mg
+2	g
+\.
+
+
+--
+-- TOC entry 3044 (class 0 OID 16463)
+-- Dependencies: 208
+-- Data for Name: katalog_2019_01; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.katalog_2019_01 (id_kataloga, datum, rb, id_dobavljaca) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3045 (class 0 OID 16466)
+-- Dependencies: 209
+-- Data for Name: katalog_2019_02; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.katalog_2019_02 (id_kataloga, datum, rb, id_dobavljaca) FROM stdin;
+11	2019-02-02	11	1234
+\.
+
+
+--
+-- TOC entry 3046 (class 0 OID 16469)
+-- Dependencies: 210
+-- Data for Name: katalog_2019_03; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.katalog_2019_03 (id_kataloga, datum, rb, id_dobavljaca) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3047 (class 0 OID 16502)
+-- Dependencies: 221
+-- Data for Name: lek; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.lek (id_leka, doza_po_pakovanju, komad_po_pakovanju, jkl, id_jedinice_mere, id_tipa_pakovanja, id_inn) FROM stdin;
+1	400	20	12345	2	3	1
+2	400	20	223344	1	1	1
+3	20	44	414313	1	2	1
+\.
+
+
+--
+-- TOC entry 3049 (class 0 OID 16510)
+-- Dependencies: 223
+-- Data for Name: proizvod; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.proizvod (id_proizvoda, kolicina, naziv_proizvoda, trenutna_cena, naziv_tipa_pakovanja, id_fabrike) FROM stdin;
+4	\N	klometol	\N	\N	\N
+5	\N	dimigal	\N	\N	\N
+6	\N	pancef	\N	\N	\N
+3	\N	ibuprofen	\N	kapsulica	\N
+2	80	blokmax	44	film 1	\N
+1	80	brufen	350	izmenjen tip55	\N
+\.
+
+
+--
+-- TOC entry 3050 (class 0 OID 16517)
+-- Dependencies: 224
+-- Data for Name: skladisna_jedinica; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.skladisna_jedinica (id_skladisne_jedinice, naziv_skladisne_jedinice) FROM stdin;
+1	fioka1
+2	magacin
+\.
+
+
+--
+-- TOC entry 3052 (class 0 OID 16522)
+-- Dependencies: 226
+-- Data for Name: stanje; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.stanje (id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) FROM stdin;
+1	2	2019-09-08 00:00:00	30
+2	1	2019-12-25 12:07:06.223899	50
+2	1	2019-12-25 12:07:58.949984	80
+1	1	2019-09-09 00:00:00	20
+1	1	2019-10-09 00:00:00	50
+\.
+
+
+--
+-- TOC entry 3053 (class 0 OID 16529)
+-- Dependencies: 227
+-- Data for Name: stavka_kataloga; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.stavka_kataloga (id_kataloga, rb_stavke, cena, jm, naziv, id_fabrike, popust) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3054 (class 0 OID 16535)
+-- Dependencies: 228
+-- Data for Name: stavka_proizvod; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.stavka_proizvod (id_kataloga, id_proizvoda, rb_stavke) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3055 (class 0 OID 16538)
+-- Dependencies: 229
+-- Data for Name: tip_pakovanja; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tip_pakovanja (id_tipa_pakovanja, naziv_tipa_pakovanja) FROM stdin;
+2	kapsulica
+1	film 1
+3	izmenjen tip55
+\.
+
+
+--
+-- TOC entry 3086 (class 0 OID 0)
+-- Dependencies: 202
+-- Name: inn_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.inn_id_seq', 2, true);
+
+
+--
+-- TOC entry 3087 (class 0 OID 0)
+-- Dependencies: 206
+-- Name: jedinica_mere_id_jedinice_mere_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.jedinica_mere_id_jedinice_mere_seq', 2, true);
+
+
+--
+-- TOC entry 3088 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: sekvenca_proizvod; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.sekvenca_proizvod', 6, true);
+
+
+--
+-- TOC entry 3089 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: skladisna_jedinica_id_skladisne_jedinice_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.skladisna_jedinica_id_skladisne_jedinice_seq', 1, false);
+
+
+--
+-- TOC entry 3090 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: tip_pakovanja_id_tipa_pakovanja_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tip_pakovanja_id_tipa_pakovanja_seq', 1, true);
+
+
+--
+-- TOC entry 2853 (class 2606 OID 16548)
+-- Name: dobavljac_detalji dobavljac_detalji_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.dobavljac_detalji
+    ADD CONSTRAINT dobavljac_detalji_pkey PRIMARY KEY (pib);
+
+
+--
+-- TOC entry 2851 (class 2606 OID 16550)
+-- Name: dobavljac dobavljac_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.dobavljac
+    ADD CONSTRAINT dobavljac_pkey PRIMARY KEY (pib);
+
+
+--
+-- TOC entry 2855 (class 2606 OID 16552)
+-- Name: fabrika fabrika_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fabrika
+    ADD CONSTRAINT fabrika_pkey PRIMARY KEY (id_fabrike);
+
+
+--
+-- TOC entry 2860 (class 2606 OID 16554)
+-- Name: inn inn_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inn
+    ADD CONSTRAINT inn_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2862 (class 2606 OID 16556)
+-- Name: istorija_cena istorija_cena_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.istorija_cena
+    ADD CONSTRAINT istorija_cena_pkey PRIMARY KEY (id_proizvoda, datum_promene);
+
+
+--
+-- TOC entry 2864 (class 2606 OID 16558)
+-- Name: jedinica_mere jedinica_mere_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.jedinica_mere
+    ADD CONSTRAINT jedinica_mere_pkey PRIMARY KEY (id_jedinice_mere);
+
+
+--
+-- TOC entry 2867 (class 2606 OID 16560)
+-- Name: lek lek_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lek
+    ADD CONSTRAINT lek_pkey PRIMARY KEY (id_leka);
+
+
+--
+-- TOC entry 2871 (class 2606 OID 16562)
+-- Name: proizvod proizvod_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proizvod
+    ADD CONSTRAINT proizvod_pkey PRIMARY KEY (id_proizvoda);
+
+
+--
+-- TOC entry 2873 (class 2606 OID 16564)
+-- Name: skladisna_jedinica skladisna_jedinica_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.skladisna_jedinica
+    ADD CONSTRAINT skladisna_jedinica_pkey PRIMARY KEY (id_skladisne_jedinice);
+
+
+--
+-- TOC entry 2876 (class 2606 OID 16566)
+-- Name: stanje stanje_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stanje
+    ADD CONSTRAINT stanje_pkey PRIMARY KEY (id_proizvoda, id_skladisne_jedinice, datum_promene);
+
+
+--
+-- TOC entry 2878 (class 2606 OID 16568)
+-- Name: stavka_kataloga stavka_kataloga_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stavka_kataloga
+    ADD CONSTRAINT stavka_kataloga_pkey PRIMARY KEY (id_kataloga, rb_stavke);
+
+
+--
+-- TOC entry 2880 (class 2606 OID 16570)
+-- Name: stavka_proizvod stavka_proizvod_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stavka_proizvod
+    ADD CONSTRAINT stavka_proizvod_pkey PRIMARY KEY (rb_stavke, id_kataloga);
+
+
+--
+-- TOC entry 2882 (class 2606 OID 16572)
+-- Name: tip_pakovanja tip_pakovanja_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tip_pakovanja
+    ADD CONSTRAINT tip_pakovanja_pkey PRIMARY KEY (id_tipa_pakovanja);
+
+
+--
+-- TOC entry 2874 (class 1259 OID 16573)
+-- Name: datum_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX datum_index ON public.stanje USING btree (datum_promene);
+
+
+--
+-- TOC entry 2865 (class 1259 OID 16574)
+-- Name: id_jm_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX id_jm_index ON public.lek USING btree (id_jedinice_mere);
+
+
+--
+-- TOC entry 2856 (class 1259 OID 16575)
+-- Name: inn_lower_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX inn_lower_idx ON public.inn USING btree (lower((naziv)::text));
+
+
+--
+-- TOC entry 2857 (class 1259 OID 16576)
+-- Name: inn_lower_idx1; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX inn_lower_idx1 ON public.inn USING btree (lower((naziv)::text) varchar_pattern_ops);
+
+
+--
+-- TOC entry 2858 (class 1259 OID 16577)
+-- Name: inn_lower_idx2; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX inn_lower_idx2 ON public.inn USING btree (lower((naziv)::text) varchar_pattern_ops);
+
+
+--
+-- TOC entry 2868 (class 1259 OID 16578)
+-- Name: kol_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX kol_idx ON public.proizvod USING btree (kolicina);
+
+
+--
+-- TOC entry 2869 (class 1259 OID 16579)
+-- Name: proizvod_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX proizvod_index ON public.proizvod USING btree (id_proizvoda);
+
+
+--
+-- TOC entry 2898 (class 2620 OID 16580)
+-- Name: istorija_cena cena_after_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER cena_after_delete AFTER DELETE ON public.istorija_cena FOR EACH ROW EXECUTE PROCEDURE public.cena_after_delete1();
+
+ALTER TABLE public.istorija_cena DISABLE TRIGGER cena_after_delete;
+
+
+--
+-- TOC entry 2899 (class 2620 OID 16581)
+-- Name: istorija_cena cena_after_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER cena_after_insert AFTER INSERT ON public.istorija_cena FOR EACH ROW EXECUTE PROCEDURE public.cena_after_insert1();
+
+ALTER TABLE public.istorija_cena DISABLE TRIGGER cena_after_insert;
+
+
+--
+-- TOC entry 2900 (class 2620 OID 16659)
+-- Name: istorija_cena cena_after_insert_update_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER cena_after_insert_update_delete AFTER INSERT OR DELETE OR UPDATE OF cena ON public.istorija_cena FOR EACH ROW EXECUTE PROCEDURE public.cena_after_insert_update_delete();
+
+
+--
+-- TOC entry 2897 (class 2620 OID 16583)
+-- Name: istorija_cena cena_before_insert_update_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER cena_before_insert_update_delete BEFORE INSERT OR DELETE OR UPDATE OF cena ON public.istorija_cena FOR EACH ROW EXECUTE PROCEDURE public.cena_before_insert_update_delete();
+
+
+--
+-- TOC entry 2895 (class 2620 OID 16584)
+-- Name: dobavljac_view dobavljac_instead_of_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER dobavljac_instead_of_insert INSTEAD OF INSERT ON public.dobavljac_view FOR EACH ROW EXECUTE PROCEDURE public.dobavljac_instead_of_insert();
+
+
+--
+-- TOC entry 2896 (class 2620 OID 16585)
+-- Name: dobavljac_view dobavljac_instead_of_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER dobavljac_instead_of_update INSTEAD OF INSERT ON public.dobavljac_view FOR EACH ROW EXECUTE PROCEDURE public.dobavljac_instead_of_update();
+
+
+--
+-- TOC entry 2901 (class 2620 OID 16586)
+-- Name: lek lek_after_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER lek_after_insert AFTER INSERT ON public.lek FOR EACH ROW WHEN ((new.id_tipa_pakovanja IS NOT NULL)) EXECUTE PROCEDURE public.lek_after_insert();
+
+
+--
+-- TOC entry 2902 (class 2620 OID 16587)
+-- Name: lek lek_after_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER lek_after_update AFTER UPDATE OF id_tipa_pakovanja ON public.lek FOR EACH ROW WHEN ((new.id_tipa_pakovanja IS DISTINCT FROM old.id_tipa_pakovanja)) EXECUTE PROCEDURE public.lek_after_update();
+
+
+--
+-- TOC entry 2903 (class 2620 OID 16588)
+-- Name: proizvod proizvod_before_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER proizvod_before_insert BEFORE INSERT ON public.proizvod FOR EACH ROW WHEN (((new.naziv_tipa_pakovanja IS NOT NULL) OR (new.trenutna_cena IS NOT NULL) OR (new.kolicina IS NOT NULL) OR (new.id_fabrike IS NOT NULL))) EXECUTE PROCEDURE public.proizvod_before_insert();
+
+
+--
+-- TOC entry 2904 (class 2620 OID 16589)
+-- Name: proizvod proizvod_before_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER proizvod_before_update BEFORE UPDATE OF kolicina, trenutna_cena, naziv_tipa_pakovanja, id_fabrike ON public.proizvod FOR EACH ROW WHEN ((current_setting('myvars.disabled'::text, true) IS NULL)) EXECUTE PROCEDURE public.proizvod_before_update();
+
+
+--
+-- TOC entry 2905 (class 2620 OID 16590)
+-- Name: stanje stanje_after_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stanje_after_delete AFTER DELETE ON public.stanje FOR EACH ROW EXECUTE PROCEDURE public.stanje_after_delete();
+
+ALTER TABLE public.stanje DISABLE TRIGGER stanje_after_delete;
+
+
+--
+-- TOC entry 2906 (class 2620 OID 16591)
+-- Name: stanje stanje_after_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stanje_after_insert AFTER INSERT ON public.stanje FOR EACH ROW EXECUTE PROCEDURE public.stanje_after_insert();
+
+ALTER TABLE public.stanje DISABLE TRIGGER stanje_after_insert;
+
+
+--
+-- TOC entry 2909 (class 2620 OID 16664)
+-- Name: stanje stanje_after_insert_update_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stanje_after_insert_update_delete AFTER INSERT OR DELETE OR UPDATE OF kolicina ON public.stanje FOR EACH ROW EXECUTE PROCEDURE public.stanje_after_insert_update_delete();
+
+
+--
+-- TOC entry 2907 (class 2620 OID 16592)
+-- Name: stanje stanje_after_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stanje_after_update AFTER UPDATE OF kolicina, datum_promene ON public.stanje FOR EACH ROW EXECUTE PROCEDURE public.stanje_after_update();
+
+ALTER TABLE public.stanje DISABLE TRIGGER stanje_after_update;
+
+
+--
+-- TOC entry 2908 (class 2620 OID 16663)
+-- Name: stanje stanje_before_insert_update_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stanje_before_insert_update_delete BEFORE INSERT OR DELETE OR UPDATE OF kolicina ON public.stanje FOR EACH ROW EXECUTE PROCEDURE public.stanje_before_insert_update_delete();
+
+
+--
+-- TOC entry 2910 (class 2620 OID 16593)
+-- Name: stavka_kataloga stavka_kataloga_after_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stavka_kataloga_after_update AFTER UPDATE OF id_fabrike ON public.stavka_kataloga FOR EACH ROW WHEN ((new.id_fabrike IS DISTINCT FROM old.id_fabrike)) EXECUTE PROCEDURE public.stavka_kataloga_after_update();
+
+
+--
+-- TOC entry 2911 (class 2620 OID 16594)
+-- Name: stavka_proizvod stavka_proizvod_after_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stavka_proizvod_after_insert AFTER INSERT ON public.stavka_proizvod FOR EACH ROW EXECUTE PROCEDURE public.stavka_proizvod_after_insert();
+
+
+--
+-- TOC entry 2912 (class 2620 OID 16595)
+-- Name: stavka_proizvod stavka_proizvod_after_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER stavka_proizvod_after_update AFTER UPDATE OF id_proizvoda ON public.stavka_proizvod FOR EACH ROW EXECUTE PROCEDURE public.stavka_proizvod_after_update();
+
+
+--
+-- TOC entry 2913 (class 2620 OID 16596)
+-- Name: tip_pakovanja tip_pakovanja_after_update; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER tip_pakovanja_after_update AFTER UPDATE OF naziv_tipa_pakovanja ON public.tip_pakovanja FOR EACH ROW WHEN (((old.naziv_tipa_pakovanja)::text IS DISTINCT FROM (new.naziv_tipa_pakovanja)::text)) EXECUTE PROCEDURE public.tip_pakovanja_after_update();
+
+
+--
+-- TOC entry 2883 (class 2606 OID 16597)
+-- Name: dobavljac_detalji dobavljac_detalji_pib_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.dobavljac_detalji
+    ADD CONSTRAINT dobavljac_detalji_pib_fkey FOREIGN KEY (pib) REFERENCES public.dobavljac(pib);
+
+
+--
+-- TOC entry 2884 (class 2606 OID 16602)
+-- Name: istorija_cena istorija_cena_id_proizvoda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.istorija_cena
+    ADD CONSTRAINT istorija_cena_id_proizvoda_fkey FOREIGN KEY (id_proizvoda) REFERENCES public.proizvod(id_proizvoda) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2885 (class 2606 OID 16607)
+-- Name: lek lek_id_inn_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lek
+    ADD CONSTRAINT lek_id_inn_fkey FOREIGN KEY (id_inn) REFERENCES public.inn(id) NOT VALID;
+
+
+--
+-- TOC entry 2886 (class 2606 OID 16612)
+-- Name: lek lek_id_jedinice_mere_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lek
+    ADD CONSTRAINT lek_id_jedinice_mere_fkey FOREIGN KEY (id_jedinice_mere) REFERENCES public.jedinica_mere(id_jedinice_mere) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2887 (class 2606 OID 16617)
+-- Name: lek lek_id_leka_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lek
+    ADD CONSTRAINT lek_id_leka_fkey FOREIGN KEY (id_leka) REFERENCES public.proizvod(id_proizvoda) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2888 (class 2606 OID 16622)
+-- Name: lek lek_id_tipa_pakovanja_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lek
+    ADD CONSTRAINT lek_id_tipa_pakovanja_fkey FOREIGN KEY (id_tipa_pakovanja) REFERENCES public.tip_pakovanja(id_tipa_pakovanja) NOT VALID;
+
+
+--
+-- TOC entry 2889 (class 2606 OID 16627)
+-- Name: proizvod proizvod_id_fabrike_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proizvod
+    ADD CONSTRAINT proizvod_id_fabrike_fkey FOREIGN KEY (id_fabrike) REFERENCES public.fabrika(id_fabrike) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2890 (class 2606 OID 16632)
+-- Name: stanje stanje_id_proizvoda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stanje
+    ADD CONSTRAINT stanje_id_proizvoda_fkey FOREIGN KEY (id_proizvoda) REFERENCES public.proizvod(id_proizvoda) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2891 (class 2606 OID 16637)
+-- Name: stanje stanje_id_skladisne_jedinice_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stanje
+    ADD CONSTRAINT stanje_id_skladisne_jedinice_fkey FOREIGN KEY (id_skladisne_jedinice) REFERENCES public.skladisna_jedinica(id_skladisne_jedinice) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2892 (class 2606 OID 16642)
+-- Name: stavka_kataloga stavka_kataloga_id_fabrike_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stavka_kataloga
+    ADD CONSTRAINT stavka_kataloga_id_fabrike_fkey FOREIGN KEY (id_fabrike) REFERENCES public.fabrika(id_fabrike) ON UPDATE RESTRICT ON DELETE RESTRICT NOT VALID;
+
+
+--
+-- TOC entry 2893 (class 2606 OID 16647)
+-- Name: stavka_proizvod stavka_proizvod_id_kataloga_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stavka_proizvod
+    ADD CONSTRAINT stavka_proizvod_id_kataloga_fkey FOREIGN KEY (id_kataloga, rb_stavke) REFERENCES public.stavka_kataloga(id_kataloga, rb_stavke);
+
+
+--
+-- TOC entry 2894 (class 2606 OID 16652)
+-- Name: stavka_proizvod stavka_proizvod_id_proizvoda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stavka_proizvod
+    ADD CONSTRAINT stavka_proizvod_id_proizvoda_fkey FOREIGN KEY (id_proizvoda) REFERENCES public.proizvod(id_proizvoda);
+
+
+--
+-- TOC entry 3062 (class 0 OID 0)
+-- Dependencies: 255
+-- Name: FUNCTION cena_after_delete1(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.cena_after_delete1() FROM postgres;
+GRANT ALL ON FUNCTION public.cena_after_delete1() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3063 (class 0 OID 0)
+-- Dependencies: 253
+-- Name: FUNCTION cena_after_insert1(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.cena_after_insert1() FROM postgres;
+GRANT ALL ON FUNCTION public.cena_after_insert1() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3064 (class 0 OID 0)
+-- Dependencies: 254
+-- Name: FUNCTION dobavljac_instead_of_insert(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.dobavljac_instead_of_insert() FROM postgres;
+GRANT ALL ON FUNCTION public.dobavljac_instead_of_insert() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3065 (class 0 OID 0)
+-- Dependencies: 264
+-- Name: FUNCTION lek_after_insert(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.lek_after_insert() FROM postgres;
+GRANT ALL ON FUNCTION public.lek_after_insert() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3066 (class 0 OID 0)
+-- Dependencies: 261
+-- Name: FUNCTION lek_after_update(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.lek_after_update() FROM postgres;
+GRANT ALL ON FUNCTION public.lek_after_update() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3067 (class 0 OID 0)
+-- Dependencies: 262
+-- Name: FUNCTION proizvod_before_insert(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.proizvod_before_insert() FROM postgres;
+GRANT ALL ON FUNCTION public.proizvod_before_insert() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3068 (class 0 OID 0)
+-- Dependencies: 263
+-- Name: FUNCTION proizvod_before_update(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.proizvod_before_update() FROM postgres;
+GRANT ALL ON FUNCTION public.proizvod_before_update() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3069 (class 0 OID 0)
+-- Dependencies: 268
+-- Name: FUNCTION stanje_after_delete(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.stanje_after_delete() FROM postgres;
+GRANT ALL ON FUNCTION public.stanje_after_delete() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3070 (class 0 OID 0)
+-- Dependencies: 266
+-- Name: FUNCTION stanje_after_insert(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.stanje_after_insert() FROM postgres;
+GRANT ALL ON FUNCTION public.stanje_after_insert() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3071 (class 0 OID 0)
+-- Dependencies: 265
+-- Name: FUNCTION stanje_after_update(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.stanje_after_update() FROM postgres;
+GRANT ALL ON FUNCTION public.stanje_after_update() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3072 (class 0 OID 0)
+-- Dependencies: 267
+-- Name: FUNCTION tip_pakovanja_after_update(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.tip_pakovanja_after_update() FROM postgres;
+GRANT ALL ON FUNCTION public.tip_pakovanja_after_update() TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3073 (class 0 OID 0)
+-- Dependencies: 204
+-- Name: TABLE istorija_cena; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.istorija_cena FROM postgres;
+GRANT ALL ON TABLE public.istorija_cena TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3074 (class 0 OID 0)
+-- Dependencies: 205
+-- Name: TABLE jedinica_mere; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.jedinica_mere FROM postgres;
+GRANT ALL ON TABLE public.jedinica_mere TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3076 (class 0 OID 0)
+-- Dependencies: 206
+-- Name: SEQUENCE jedinica_mere_id_jedinice_mere_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON SEQUENCE public.jedinica_mere_id_jedinice_mere_seq FROM postgres;
+GRANT ALL ON SEQUENCE public.jedinica_mere_id_jedinice_mere_seq TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3077 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: TABLE lek; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.lek FROM postgres;
+GRANT ALL ON TABLE public.lek TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3078 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: TABLE proizvod; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.proizvod FROM postgres;
+GRANT ALL ON TABLE public.proizvod TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3079 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: TABLE skladisna_jedinica; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.skladisna_jedinica FROM postgres;
+GRANT ALL ON TABLE public.skladisna_jedinica TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3081 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: SEQUENCE skladisna_jedinica_id_skladisne_jedinice_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON SEQUENCE public.skladisna_jedinica_id_skladisne_jedinice_seq FROM postgres;
+GRANT ALL ON SEQUENCE public.skladisna_jedinica_id_skladisne_jedinice_seq TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3082 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: TABLE stanje; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.stanje FROM postgres;
+GRANT ALL ON TABLE public.stanje TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3083 (class 0 OID 0)
+-- Dependencies: 229
+-- Name: TABLE tip_pakovanja; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE public.tip_pakovanja FROM postgres;
+GRANT ALL ON TABLE public.tip_pakovanja TO postgres WITH GRANT OPTION;
+
+
+--
+-- TOC entry 3085 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: SEQUENCE tip_pakovanja_id_tipa_pakovanja_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON SEQUENCE public.tip_pakovanja_id_tipa_pakovanja_seq FROM postgres;
+GRANT ALL ON SEQUENCE public.tip_pakovanja_id_tipa_pakovanja_seq TO postgres WITH GRANT OPTION;
+
+
+-- Completed on 2020-01-10 22:17:05
+
+--
+-- PostgreSQL database dump complete
+--
+
