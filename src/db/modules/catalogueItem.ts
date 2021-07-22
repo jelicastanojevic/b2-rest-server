@@ -49,6 +49,7 @@ export const CatalogueItemDb = {
     );
   },
   async updateCatalogueItem(catalogueItem: CatalogueItem) {
+    console.log(catalogueItem);
     const result = await Database.executeQuery(
       'UPDATE stavka_kataloga SET naziv = $1, cena = $2, jm = $3, popust = $4, id_fabrike = $5 WHERE id_kataloga = $6 AND rb_stavke=$7',
       [

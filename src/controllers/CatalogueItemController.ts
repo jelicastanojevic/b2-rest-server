@@ -74,8 +74,9 @@ export const CatalogueItemController: ICatalogueItemController = {
   },
   async updateCatalogueItem(req, res) {
     try {
+      console.log(req.params);
       const catalogueItem = new CatalogueItem(
-        req.params.catalogueId,
+        req.params.id,
         req.body.itemSeqNum,
         req.body.name,
         req.body.price,
@@ -96,9 +97,9 @@ export const CatalogueItemController: ICatalogueItemController = {
   },
   async deleteCatalogueItem(req, res) {
     try {
-      let { catalogueId } = req.params;
+      let { id } = req.params;
       let { itemSeqNum } = req.body;
-      const catalogueItem = await CatalogueItemService.deleteCatalogueItem(catalogueId, itemSeqNum);
+      const catalogueItem = await CatalogueItemService.deleteCatalogueItem(id, itemSeqNum);
 
       return res.status(200).send({ catalogueItem });
     } catch (error) {

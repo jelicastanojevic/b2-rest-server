@@ -54,8 +54,7 @@ export const StateController: IStateController = {
   },
   async getState(req, res) {
     try {
-      let { productId } = req.params;
-      let { warehouseId, dateOfChange } = req.body;
+      let { productId, warehouseId, dateOfChange } = req.body;
       const state = await StateService.getState(productId, warehouseId, dateOfChange);
 
       return res.status(200).send({ state });
@@ -69,9 +68,9 @@ export const StateController: IStateController = {
   async updateState(req, res) {
     try {
       const state = new State(
-        req.params.productId,
-        req.body.warehouseId,
+        req.params.id,
         req.body.dateOfChange,
+        req.body.warehouseId,
         req.body.amount
       );
       const updatedState = await StateService.updateState(state);
@@ -86,8 +85,7 @@ export const StateController: IStateController = {
   },
   async deleteState(req, res) {
     try {
-      let { productId } = req.params;
-      let { warehouseId, dateOfChange } = req.body;
+      let { productId, warehouseId, dateOfChange } = req.body;
       const state = await StateService.deleteState(productId, warehouseId, dateOfChange);
 
       return res.status(200).send({ state });

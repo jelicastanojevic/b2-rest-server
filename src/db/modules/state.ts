@@ -13,14 +13,17 @@ export const StateDb = {
     );
   },
   async getState(productId: number, warehouseId: number, dateOfChange: string) {
+    //dateOfChange format yyyy-mm-dd hh:mm:ss
     const state = await Database.executeQuery(
-      'SELECT id_proizvoda as "productId", \
-              id_skladisne_jedinice as "warehouseId",\
-              datum_promene as "dateOfChange",\
-              kolicina as "amount"\
+      "SELECT id_proizvoda as 'productId', \
+              id_skladisne_jedinice as 'warehouseId',\
+              datum_promene as 'dateOfChange',\
+              kolicina as 'amount'\
               FROM stanje\
-              WHERE id_proizvoda = $1 AND id_skladisne_jedinice = $2 AND datum_promene = $3',
-      [productId, warehouseId, dateOfChange]
+              WHERE id_proizvoda = $1 AND id_skladisne_jedinice = $2 AND datum_promene::text LIKE '" +
+        dateOfChange +
+        "%'",
+      [productId, warehouseId]
     );
 
     if (!state) {
@@ -36,9 +39,11 @@ export const StateDb = {
   },
   async updateState(state: State) {
     const result = await Database.executeQuery(
-      'UPDATE stanje SET  kolicina = $1, \
-                           WHERE id_proizvoda = $2 and id_skladisne_jedinice = $3 and datum_promene = $4',
-      [state.getAmount(), state.getProductId(), state.getWarehouseId(), state.getDateOfChange()]
+      "UPDATE stanje SET  kolicina = $1 \
+                           WHERE id_proizvoda = $2 and id_skladisne_jedinice = $3 and datum_promene::text LIKE '" +
+        state.getDateOfChange() +
+        "%'",
+      [state.getAmount(), state.getProductId(), state.getWarehouseId()]
     );
 
     if (result.rowCount === 0) {
@@ -47,8 +52,10 @@ export const StateDb = {
   },
   async deleteState(productId: number, warehouseId: number, dateOfChange: string) {
     const result = await Database.executeQuery(
-      'DELETE FROM stanje WHERE id_proizvoda = $1 and id_skladisne_jedinice = $2 and datum_promene = $3',
-      [productId, warehouseId, dateOfChange]
+      "DELETE FROM stanje WHERE id_proizvoda = $1 and id_skladisne_jedinice = $2 and datum_promene::text LIKE '" +
+        dateOfChange +
+        "%'",
+      [productId, warehouseId]
     );
 
     if (result.rowCount === 0) {

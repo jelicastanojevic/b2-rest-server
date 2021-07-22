@@ -1,6 +1,5 @@
 export class Supplier {
   constructor(
-    private id: number,
     private pib: string,
     private name: string,
     private address: string,
@@ -10,10 +9,6 @@ export class Supplier {
     private bankAccountNumber: string,
     private telephoneNumber: string
   ) {}
-
-  getId() {
-    return this.id;
-  }
 
   getPib() {
     return this.pib;

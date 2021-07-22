@@ -18,12 +18,12 @@ const priceRoutes = express.Router();
 // #endregion
 priceRoutes.get('/', PriceController.getPrices);
 
-priceRoutes.get('/:id', PriceController.getPrice);
+priceRoutes.get('/:productId', PriceController.getPrice);
 
 priceRoutes.post('/', PriceController.insertPrice);
 
-priceRoutes.put('/:id', PriceController.updatePrice);
+priceRoutes.put('/:productId', PriceController.updatePrice);
 
-priceRoutes.delete('/:id', PriceController.deletePrice);
+priceRoutes.delete('/:productId', PriceController.deletePrice);
 
 export { priceRoutes };

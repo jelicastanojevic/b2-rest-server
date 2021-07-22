@@ -1,51 +1,69 @@
 import { Database } from '..';
+import { HttpError } from '../../error/HttpError';
+import { Price } from '../../models/Price';
 
 export const PriceDb = {
   async getPrices() {
     return await Database.executeQuery(
-      'SELECT id_proizvoda as "idProizvoda", \
-              datum_promene as "datumPromene",\
-              cena  \
+      'SELECT id_proizvoda as "productId", \
+              datum_promene as "dateOfChange",\
+              cena as "price" \
               FROM istorija_cena ORDER BY datum_promene DESC'
     );
   },
-  async getPrice(idProizvoda: number, datumPromene: Date) {
-    return await Database.executeQuery(
-      'SELECT id_proizvoda as "idProizvoda", \
-              datum_promene as "datumPromene",\
-              cena \
+  async getPrice(productId: number, dateOfChange: string) {
+    const price = await Database.executeQuery(
+      "SELECT id_proizvoda as 'productId', \
+              datum_promene as 'dateOfChange',\
+              cena as 'price'\
               FROM istorija_cena \
-              WHERE id_proizvoda = $1 AND datum_promene = $2',
-      [idProizvoda, datumPromene]
+              WHERE id_proizvoda = $1 AND datum_promene::text LIKE '" +
+        dateOfChange +
+        "%'",
+      [productId]
     );
+
+    if (!price) {
+      throw new HttpError(404, 'Price not found!');
+    }
+
+    return price;
   },
-  async insertPrice(idProizvoda: number, datumPromene: Date, cena: number) {
-    if (datumPromene === null) {
+  async insertPrice(price: Price) {
+    if (price.getDateOfChange() === null) {
       return await Database.executeQuery(
         'INSERT INTO istorija_cena(id_proizvoda, cena) VALUES($1, $2)',
-        [idProizvoda, cena]
+        [price.getProductId(), price.getPrice()]
       );
     }
     return await Database.executeQuery(
       'INSERT INTO istorija_cena(id_proizvoda, datum_promene, cena) VALUES($1, $2, $3)',
-      [idProizvoda, datumPromene, cena]
+      [price.getProductId(), price.getDateOfChange(), price.getPrice()]
     );
   },
-  async updatePrice(id: number, datumPromene: string, cena: number) {
-    return await Database.executeQuery(
+  async updatePrice(price: Price) {
+    const result = await Database.executeQuery(
       "UPDATE istorija_cena SET cena = $1 \
                            WHERE id_proizvoda = $2 AND datum_promene::text LIKE '" +
-        datumPromene +
+        price.getDateOfChange() +
         "%'",
-      [cena, id]
+      [price.getPrice(), price.getProductId()]
     );
+
+    if (result.rowCount === 0) {
+      throw new HttpError(404, 'Price not found!');
+    }
   },
-  async deletePrice(idProizvoda: number, datumPromene: string) {
-    return await Database.executeQuery(
+  async deletePrice(productId: number, dateOfChange: string) {
+    const result = await Database.executeQuery(
       "DELETE FROM istorija_cena WHERE id_proizvoda = $1 AND datum_promene::text LIKE '" +
-        datumPromene +
+        dateOfChange +
         "%'",
-      [idProizvoda]
+      [productId]
     );
+
+    if (result.rowCount === 0) {
+      throw new HttpError(404, 'Price not found!');
+    }
   },
 };

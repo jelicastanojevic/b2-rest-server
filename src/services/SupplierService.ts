@@ -5,7 +5,7 @@ export const SupplierService = {
   async getSuppliers() {
     return SupplierDb.getSuppliers();
   },
-  async getSupplier(id: number) {
+  async getSupplier(id: string) {
     return SupplierDb.getSupplier(id);
   },
   async insertSupplier(supplier: Supplier) {

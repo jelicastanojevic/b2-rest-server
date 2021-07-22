@@ -5,30 +5,28 @@ import { Supplier } from '../../models/Supplier';
 export const SupplierDb = {
   async getSuppliers() {
     return await Database.executeQuery(
-      'SELECT id, \
-              pib, \
+      'SELECT pib, \
               naziv as "name",\
               adresa as "address", \
               email, \
               maticni_broj as "nationalId", \
               (tekuci_racun).naziv_banke as "bankName", \
-              (tekuci_racun).broj_racuna as "bankAccountName", \
+              (tekuci_racun).broj_racuna as "bankAccountNumber", \
               telefon as "telephoneNumber" \
               FROM dobavljac_view'
     );
   },
   async getSupplier(id: string) {
     const supplier = await Database.executeQuery(
-      'SELECT id, \
-              pib, \
+      'SELECT pib, \
               naziv as "name",\
               adresa as "address", \
               email, \
               maticni_broj as "nationalId", \
               (tekuci_racun).naziv_banke as "bankName", \
-              (tekuci_racun).broj_racuna as "bankAccountName", \
+              (tekuci_racun).broj_racuna as "bankAccountNumber", \
               telefon as "telephoneNumber"\
-              FROM dobavljac_view WHERE id = $1',
+              FROM dobavljac_view WHERE pib = $1',
       [id]
     );
 
@@ -39,9 +37,8 @@ export const SupplierDb = {
   },
   async insertSupplier(supplier: Supplier) {
     return await Database.executeQuery(
-      'INSERT INTO dobavljac_view(id, pib, naziv, adresa, email, maticni_broj, tekuci_racun, telefon) VALUES($1, $2, $3, $4, $5, $6, ($8, $7), $9)',
+      'INSERT INTO dobavljac_view(pib, naziv, adresa, email, maticni_broj, tekuci_racun, telefon) VALUES($1, $2, $3, $4, $5, ($7, $6), $8)',
       [
-        supplier.getId(),
         supplier.getPib(),
         supplier.getName(),
         supplier.getAddress(),
@@ -62,7 +59,7 @@ export const SupplierDb = {
                            maticni_broj= $5, \
                            tekuci_racun = ($7, $6), \
                            telefon = $8 \
-                           WHERE id = $9',
+                           WHERE pib = $1',
       [
         supplier.getPib(),
         supplier.getName(),
@@ -72,7 +69,6 @@ export const SupplierDb = {
         supplier.getBankName(),
         supplier.getBankAccountNumber(),
         supplier.getTelephoneNumber(),
-        supplier.getId(),
       ]
     );
 
@@ -81,7 +77,7 @@ export const SupplierDb = {
     }
   },
   async deleteSupplier(id: number) {
-    const result = await Database.executeQuery('DELETE FROM dobavljac_view WHERE id = $1', [id]);
+    const result = await Database.executeQuery('DELETE FROM dobavljac_view WHERE pib = $1', [id]);
 
     if (result.rowCount === 0) {
       throw new HttpError(404, 'Supplier not found!');

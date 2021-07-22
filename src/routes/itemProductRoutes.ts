@@ -20,7 +20,7 @@ itemProductRoutes.get('/', ItemProductController.getItemProducts);
 itemProductRoutes.get('/:id', ItemProductController.getItemProduct);
 
 itemProductRoutes.post('/', ItemProductController.insertItemProduct);
-itemProductRoutes.put('/:id', ItemProductController.updateItemProduct);
+itemProductRoutes.put('/', ItemProductController.updateItemProduct);
 itemProductRoutes.delete('/:id', ItemProductController.deleteItemProduct);
 
 export { itemProductRoutes };

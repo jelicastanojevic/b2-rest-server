@@ -62,7 +62,7 @@ export const ItemProductController: IItemProductController = {
   async updateItemProduct(req, res) {
     try {
       const itemProduct = new ItemProduct(
-        req.params.catalogueId,
+        req.body.catalogueId,
         req.body.itemSeqNum,
         req.body.productId
       );
@@ -78,9 +78,9 @@ export const ItemProductController: IItemProductController = {
   },
   async deleteItemProduct(req, res) {
     try {
-      let { catalogueId } = req.params;
+      let { id } = req.params;
       let { itemSeqNum } = req.body;
-      const itemProduct = await ItemProductService.deleteItemProduct(catalogueId, itemSeqNum);
+      const itemProduct = await ItemProductService.deleteItemProduct(id, itemSeqNum);
 
       return res.status(200).send({ itemProduct });
     } catch (error) {

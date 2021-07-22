@@ -20,7 +20,6 @@ export const SupplierController: ISupplierController = {
       const suppliers = await SupplierService.getSuppliers();
       const tableColumns = [
         'RB',
-        'ID',
         'PIB',
         'Naziv',
         'Adresa',
@@ -42,7 +41,6 @@ export const SupplierController: ISupplierController = {
   async insertSupplier(req, res) {
     try {
       const supplier = new Supplier(
-        req.body.id,
         req.body.pib,
         req.body.name,
         req.body.address,
@@ -79,7 +77,6 @@ export const SupplierController: ISupplierController = {
     try {
       const supplier = new Supplier(
         req.params.id,
-        req.body.pib,
         req.body.name,
         req.body.address,
         req.body.email,

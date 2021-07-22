@@ -2,6 +2,8 @@ import { RequestHandler } from 'express';
 import { getLogger } from 'log4js';
 
 import { PriceDb } from '../db/modules/price';
+import { Price } from '../models/Price';
+import { PriceService } from '../services/PriceService';
 
 const logger = getLogger('PriceController.ts');
 
@@ -16,7 +18,7 @@ interface IPriceController {
 export const PriceController: IPriceController = {
   async getPrices(req, res) {
     try {
-      const prices = await PriceDb.getPrices();
+      const prices = await PriceService.getPrices();
       const tableColumns = ['RB', 'Šifra proizvoda', 'Datum promene', 'Cena'];
 
       return res.status(200).send({ tableColumns: tableColumns, tableData: prices.rows });
@@ -29,10 +31,10 @@ export const PriceController: IPriceController = {
   },
   async insertPrice(req, res) {
     try {
-      let { idProizvoda, datumPromene, cena } = req.body;
-      const { insertId } = await PriceDb.insertPrice(idProizvoda, datumPromene, cena);
+      const price = new Price(req.body.productId, req.body.dateOfChange, req.body.price);
+      const { insertId } = await PriceDb.insertPrice(price);
 
-      return res.status(200).send({ insertId });
+      return res.status(201).send({ insertId });
     } catch (error) {
       logger.error(error);
       return res
@@ -44,6 +46,7 @@ export const PriceController: IPriceController = {
     try {
       let { id } = req.params;
       let { datumPromene } = req.body;
+
       const price = await PriceDb.getPrice(id, datumPromene);
 
       return res.status(200).send({ price });
@@ -56,13 +59,11 @@ export const PriceController: IPriceController = {
   },
   async updatePrice(req, res) {
     try {
-      let { id } = req.params;
-      let { datumPromene, cena } = req.body;
-      let dat = datumPromene.split('.')[0];
-      dat = dat.split('T')[0] + ' ' + dat.split('T')[1];
-      const price = await PriceDb.updatePrice(id, dat, cena);
+      const price = new Price(req.params.productId, req.body.dateOfChange, req.body.price);
 
-      return res.status(200).send({ price });
+      const updatedPrice = await PriceDb.updatePrice(price);
+
+      return res.status(200).send({ updatedPrice });
     } catch (error) {
       logger.error(error);
       return res
@@ -72,13 +73,10 @@ export const PriceController: IPriceController = {
   },
   async deletePrice(req, res) {
     try {
-      let { id } = req.params;
-      let { datumPromene } = req.body;
-      let dat = datumPromene.split('.')[0];
-      dat = dat.split('T')[0] + ' ' + dat.split('T')[1];
+      let { productId } = req.params;
+      let { dateOfChange } = req.body;
 
-      const price = await PriceDb.deletePrice(id, dat);
-      // throw Error();
+      const price = await PriceDb.deletePrice(productId, dateOfChange);
       return res.status(200).send({ price });
     } catch (error) {
       logger.error(error);
