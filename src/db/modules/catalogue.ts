@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { Catalogue } from '../../models/Catalogue';
 
 export const CatalogueDb = {
-  async getCatalogues() {
-    return await Database.executeQuery(
+  getCatalogues() {
+    return Database.executeQuery(
       'SELECT id_kataloga as "id", \
               datum as "date", \
               rb as "catalogueSeqNum",  \
@@ -28,8 +28,8 @@ export const CatalogueDb = {
 
     return catalogue;
   },
-  async insertCatalogue(catalogue: Catalogue) {
-    return await Database.executeQuery(
+  insertCatalogue(catalogue: Catalogue) {
+    return Database.executeQuery(
       'INSERT INTO katalog(id_kataloga, datum, rb, id_dobavljaca) VALUES($1, $2, $3, $4)',
       [
         catalogue.getCatalogueId(),

@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { ItemProduct } from '../../models/ItemProduct';
 
 export const ItemProductDb = {
-  async getItemProducts() {
-    return await Database.executeQuery(
+  getItemProducts() {
+    return Database.executeQuery(
       'SELECT id_kataloga as "catalogueId", \
               rb_stavke as "itemSeqNum", \
               id_proizvoda as "productId" \
@@ -26,8 +26,8 @@ export const ItemProductDb = {
 
     return itemProduct;
   },
-  async insertItemProduct(itemProduct: ItemProduct) {
-    return await Database.executeQuery(
+  insertItemProduct(itemProduct: ItemProduct) {
+    return Database.executeQuery(
       'INSERT INTO stavka_proizvod(id_kataloga, rb_stavke, id_proizvoda) VALUES($1, $2, $3)',
       [itemProduct.getCatalogueId(), itemProduct.getItemSeqNum(), itemProduct.getProductId()]
     );

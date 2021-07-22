@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { Supplier } from '../../models/Supplier';
 
 export const SupplierDb = {
-  async getSuppliers() {
-    return await Database.executeQuery(
+  getSuppliers() {
+    return Database.executeQuery(
       'SELECT pib, \
               naziv as "name",\
               adresa as "address", \
@@ -35,8 +35,8 @@ export const SupplierDb = {
     }
     return supplier;
   },
-  async insertSupplier(supplier: Supplier) {
-    return await Database.executeQuery(
+  insertSupplier(supplier: Supplier) {
+    return Database.executeQuery(
       'INSERT INTO dobavljac_view(pib, naziv, adresa, email, maticni_broj, tekuci_racun, telefon) VALUES($1, $2, $3, $4, $5, ($7, $6), $8)',
       [
         supplier.getPib(),

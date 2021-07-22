@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { Employee } from '../../models/Employee';
 
 export const EmployeeDb = {
-  async getEmployees() {
-    return await Database.executeQuery(
+  getEmployees() {
+    return Database.executeQuery(
       'SELECT id, \
               ime as "name", \
               prezime as "surname",  \
@@ -36,8 +36,8 @@ export const EmployeeDb = {
 
     return employee;
   },
-  async insertEmployee(employee: Employee) {
-    return await Database.executeQuery(
+  insertEmployee(employee: Employee) {
+    return Database.executeQuery(
       'INSERT INTO zaposleni(id, ime, prezime, adresa, email, telefon, jmbg, tip_zaposlenog) VALUES($1, $2, $3, $4, $5, $6, $7, $8)',
       [
         employee.getId(),

@@ -21,4 +21,8 @@ export class State {
   getAmount() {
     return this.amount;
   }
+
+  setDateOfChange(formattedDate: string) {
+    this.dateOfChange = formattedDate;
+  }
 }

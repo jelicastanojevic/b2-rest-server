@@ -8,7 +8,8 @@ export const Database = {
   initialize() {
     const timestampOID = 1114;
     types.setTypeParser(timestampOID, (stringValue) => {
-      return new Date(Date.parse(stringValue + '+0000'));
+      return stringValue;
+      // return new Date(Date.parse(stringValue + '+0000'));
     });
 
     pool = new Pool({

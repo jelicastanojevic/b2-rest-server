@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { Price } from '../../models/Price';
 
 export const PriceDb = {
-  async getPrices() {
-    return await Database.executeQuery(
+  getPrices() {
+    return Database.executeQuery(
       'SELECT id_proizvoda as "productId", \
               datum_promene as "dateOfChange",\
               cena as "price" \
@@ -29,14 +29,14 @@ export const PriceDb = {
 
     return price;
   },
-  async insertPrice(price: Price) {
+  insertPrice(price: Price) {
     if (price.getDateOfChange() === null) {
-      return await Database.executeQuery(
-        'INSERT INTO istorija_cena(id_proizvoda, cena) VALUES($1, $2)',
-        [price.getProductId(), price.getPrice()]
-      );
+      return Database.executeQuery('INSERT INTO istorija_cena(id_proizvoda, cena) VALUES($1, $2)', [
+        price.getProductId(),
+        price.getPrice(),
+      ]);
     }
-    return await Database.executeQuery(
+    return Database.executeQuery(
       'INSERT INTO istorija_cena(id_proizvoda, datum_promene, cena) VALUES($1, $2, $3)',
       [price.getProductId(), price.getDateOfChange(), price.getPrice()]
     );

@@ -1,10 +1,8 @@
 import { config as loadConfigFromEnvFile } from 'dotenv';
 import log4js, { getLogger } from 'log4js';
 
-// Loading environment variables from .env file
 loadConfigFromEnvFile({ path: '.env' });
 
-// Logger configuration
 log4js.configure({
   appenders: {
     out: { type: 'stdout' },
@@ -27,5 +25,5 @@ export const config = {
   DB_HOST: process.env.DB_HOST!,
   DB_DATABASE: process.env.DB_DATABASE!,
   DB_USER: process.env.DB_USER!,
-  DB_PASSWORD: process.env.DB_PASSWORD!
+  DB_PASSWORD: process.env.DB_PASSWORD!,
 };

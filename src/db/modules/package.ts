@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { Package } from '../../models/Package';
 
 export const PackageDb = {
-  async getPackages() {
-    return await Database.executeQuery(
+  getPackages() {
+    return Database.executeQuery(
       'SELECT id_tipa_pakovanja as "id", \
               naziv_tipa_pakovanja as "name" \
        FROM tip_pakovanja'
@@ -24,8 +24,8 @@ export const PackageDb = {
 
     return drugPackage;
   },
-  async insertPackage(drugPackage: Package) {
-    return await Database.executeQuery(
+  insertPackage(drugPackage: Package) {
+    return Database.executeQuery(
       'INSERT INTO tip_pakovanja(id_tipa_pakovanja, naziv_tipa_pakovanja) VALUES($1, $2)',
       [drugPackage.getId(), drugPackage.getName()]
     );

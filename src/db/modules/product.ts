@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { Product } from '../../models/Product';
 
 export const ProductDb = {
-  async getProducts() {
-    return await Database.executeQuery(
+  getProducts() {
+    return Database.executeQuery(
       'SELECT id_proizvoda as "id", \
               naziv_proizvoda as "name",\
               trenutna_cena as "currentPrice", \
@@ -32,8 +32,8 @@ export const ProductDb = {
     }
     return product;
   },
-  async insertProduct(product: Product) {
-    return await Database.executeQuery(
+  insertProduct(product: Product) {
+    return Database.executeQuery(
       'INSERT INTO proizvod(id_proizvoda, naziv_proizvoda, trenutna_cena, kolicina, naziv_tipa_pakovanja, id_fabrike) VALUES($1, $2, $3, $4, $5, $6)',
       [
         product.getId(),
@@ -46,8 +46,6 @@ export const ProductDb = {
     );
   },
   async updateProduct(id: number, product: Product) {
-    console.log(id);
-    console.log(product);
     const result = await Database.executeQuery(
       'UPDATE proizvod SET id_proizvoda = $1, \
                            naziv_proizvoda = $2, \

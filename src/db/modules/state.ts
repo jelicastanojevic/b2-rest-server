@@ -3,8 +3,8 @@ import { HttpError } from '../../error/HttpError';
 import { State } from '../../models/State';
 
 export const StateDb = {
-  async getStates() {
-    return await Database.executeQuery(
+  getStates() {
+    return Database.executeQuery(
       'SELECT id_proizvoda as "productId", \
               id_skladisne_jedinice as "warehouseId",\
               datum_promene as "dateOfChange",\
@@ -31,8 +31,8 @@ export const StateDb = {
     }
     return state;
   },
-  async insertState(state: State) {
-    return await Database.executeQuery(
+  insertState(state: State) {
+    return Database.executeQuery(
       'INSERT INTO stanje(id_proizvoda, id_skladisne_jedinice, datum_promene, kolicina) VALUES($1, $2, $3, $4)',
       [state.getProductId(), state.getWarehouseId(), state.getDateOfChange(), state.getAmount()]
     );
